@@ -11,7 +11,7 @@ file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/include/*/*.cpp
 )
 
-file(GLOB LIBRARY_DIRS RELATIVE ${CMAKE_SOURCE_DIR}/library ${CMAKE_SOURCE_DIR}/include/*)
+file(GLOB LIBRARY_DIRS RELATIVE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/*)
 
 set(INCLUDE_DIRS "")
 foreach(dir ${LIBRARY_DIRS})

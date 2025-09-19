@@ -4,7 +4,6 @@ project(App CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(spdlog REQUIRED)
-find_package(nlohmann_json 3.2.0 REQUIRED)
 
 file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/*.cpp

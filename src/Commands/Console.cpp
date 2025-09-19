@@ -39,6 +39,10 @@ void Console::Run() {
     }
 }
 
+void Console::ReDrawPrompt() {
+    std::cout << "\r[CMD] >> " << std::flush;
+}
+
 void Console::run() {
     Run();
 }

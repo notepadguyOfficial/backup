@@ -86,7 +86,7 @@ Logs::Logs() {
     console_backend->auto_flush(true);
     auto console_sink = boost::make_shared<boost::log::sinks::synchronous_sink<boost::log::sinks::text_ostream_backend>>(console_backend);
     console_sink->set_formatter([](boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
-        strm << rec[boost::log::expressions::smessage];
+        strm << "\033[2K\r" << rec[boost::log::expressions::smessage] << "\n";
     });
     boost::log::core::get()->add_sink(console_sink);
 

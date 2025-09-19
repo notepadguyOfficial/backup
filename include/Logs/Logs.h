@@ -1,4 +1,5 @@
 #pragma once
+#include "Console.h"
 #include <boost/log/trivial.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 #include <memory>

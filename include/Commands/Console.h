@@ -15,6 +15,7 @@ private:
 public:
     Console(Dat& settings, WebSocketHandler& wsHandler);
     void run();
+    static void ReDrawPrompt();
 };
 
 #endif

@@ -10,7 +10,7 @@ A C++ console application with command-line interface.
 - Debug: Builds on pushes and PRs to main with Debug configuration.
 - Release: Builds on pushes and PRs to main with Release configuration.
 
-[debug]: https://github.com/notepadguy/backup/actions/workflows/debug.yml
-[debug-badge]: https://github.com/notepadguy/backup/actions/workflows/debug.yml/badge.svg
-[release]: https://github.com/notepadguy/backup/actions/workflows/release.yml
-[release-badge]: https://github.com/notepadguy/backup/actions/workflows/release.yml/badge.svg
+[debug]: https://github.com/notepadguyOfficial/backup/actions/workflows/debug.yml
+[debug-badge]: https://github.com/notepadguyOfficial/backup/actions/workflows/debug.yml/badge.svg
+[release]: https://github.com/notepadguyOfficial/backup/actions/workflows/release.yml
+[release-badge]: https://github.com/notepadguyOfficial/backup/actions/workflows/release.yml/badge.svg

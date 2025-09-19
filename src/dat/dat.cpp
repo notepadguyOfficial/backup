@@ -109,6 +109,7 @@ bool Dat::CreateDefaultFile(const std::string& filename) {
     settings["version"] = "1.0";
     settings["debug"] = "true";
     settings["auto_save"] = "true";
+    settings["websocket_port"] = "8080";
     // Save settings to create a base file
     bool result = SaveToFile(filename);
     if (result) {

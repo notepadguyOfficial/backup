@@ -11,6 +11,9 @@ endif()
 # Find spdlog
 find_package(spdlog REQUIRED)
 
+# Find Boost
+find_package(Boost REQUIRED)
+
 # Automatically collect source files (with CONFIGURE_DEPENDS for auto-detection of new files)
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/src/*/*.cpp)
 

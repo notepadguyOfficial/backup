@@ -1,12 +1,13 @@
 #include "dat.h"
 #include "Logs.h"
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <cstring>
 
 const char MASTER_KEY = 0xAA;
 
-std::string ENCRYPT_WITH_KEY(const std::string& data, char key) {
+std::string EncryptWithKey(const std::string& data, char key) {
     std::string result = data;
     for (size_t i = 0; i < result.size(); ++i) {
         result[i] ^= key;
@@ -15,24 +16,33 @@ std::string ENCRYPT_WITH_KEY(const std::string& data, char key) {
 }
 
 Dat::Dat(const std::string& filename) {
+    filename_ = filename;
     xor_key = 0xFF;
-    if (!LOAD_FROM_FILE(filename)) {
-        CREATE_DEFAULT_FILE(filename);
+    if (!LoadFromFile(filename)) {
+        CreateDefaultFile(filename);
+    }
+    // Set auto_save after loading/creating
+    auto_save_ = (get("auto_save") != "false");
+    LOG_INFO("Dat initialization completed");
+}
+
+Dat::~Dat() {
+    if (auto_save_) {
+        SaveToFile(filename_);
     }
 }
 
-Dat::~Dat() {}
-
 std::string Dat::encrypt(const std::string& data) {
-    return ENCRYPT_WITH_KEY(data, xor_key);
+    return EncryptWithKey(data, xor_key);
 }
 
 std::string Dat::decrypt(const std::string& data) {
     // XOR is symmetric
-    return ENCRYPT_WITH_KEY(data, xor_key);
+    return EncryptWithKey(data, xor_key);
 }
 
-bool Dat::LOAD_FROM_FILE(const std::string& filename) {
+bool Dat::LoadFromFile(const std::string& filename) {
+    std::lock_guard<std::mutex> lock(mtx_);
     std::ifstream file(filename, std::ios::binary);
     if (!file) {
         LOG_INFO("Settings file not found: {}", filename);
@@ -65,7 +75,10 @@ bool Dat::LOAD_FROM_FILE(const std::string& filename) {
     return true;
 }
 
-bool Dat::SAVE_TO_FILE(const std::string& filename) {
+bool Dat::SaveToFile(const std::string& filename) {
+    std::lock_guard<std::mutex> lock(mtx_);
+    // Update auto_save setting
+    settings["auto_save"] = auto_save_ ? "true" : "false";
     std::ostringstream oss;
     for (const auto& pair : settings) {
         oss << pair.first << "=" << pair.second << "\n";
@@ -83,16 +96,21 @@ bool Dat::SAVE_TO_FILE(const std::string& filename) {
     file.write(&encrypted_key, 1);
     // Write encrypted settings
     file.write(encrypted_settings.c_str(), encrypted_settings.size());
+    if (!file) {
+        LOG_ERROR("Failed to write to file: {}", filename);
+        return false;
+    }
     LOG_INFO("Saved settings to {}", filename);
     return true;
 }
 
-bool Dat::CREATE_DEFAULT_FILE(const std::string& filename) {
+bool Dat::CreateDefaultFile(const std::string& filename) {
     // Set default settings
     settings["version"] = "1.0";
     settings["debug"] = "true";
+    settings["auto_save"] = "true";
     // Save settings to create a base file
-    bool result = SAVE_TO_FILE(filename);
+    bool result = SaveToFile(filename);
     if (result) {
         LOG_INFO("Created default file: {}", filename);
     }
@@ -100,10 +118,12 @@ bool Dat::CREATE_DEFAULT_FILE(const std::string& filename) {
 }
 
 std::string Dat::get(const std::string& key) {
+    std::lock_guard<std::mutex> lock(mtx_);
     auto it = settings.find(key);
     return it != settings.end() ? it->second : "";
 }
 
 void Dat::set(const std::string& key, const std::string& value) {
+    std::lock_guard<std::mutex> lock(mtx_);
     settings[key] = value;
 }

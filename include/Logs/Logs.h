@@ -5,6 +5,8 @@
 #include <string>
 #include <fmt/core.h>
 #include <filesystem>
+#include <chrono>
+#include <ctime>
 
 class Logs {
 public:
@@ -36,15 +38,28 @@ public:
             color = itColor->second;
         }
 
+        auto now = std::chrono::system_clock::now();
+        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+        std::tm* now_tm = std::localtime(&now_time);
+        char time_str[20];
+        std::strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", now_tm);
+
         std::string formatted = fmt::format(
-            "[{}:{}] [{}] {}[{}]{}\033[0m: {}",
+            "{}{}{} [{}:{}] {}[{}]{} {}[{}]{}: {}{}{}",
+            this->timestamp_color_,                           // timestamp color
+            time_str,                                         // timestamp
+            "\033[0m",                                        // reset
             std::filesystem::path(file).filename().string(),  // file
             line,                                             // line
+            this->func_color_,                                // func color
             func,                                             // function
-            color,                                            // color start
+            "\033[0m",                                        // reset
+            color,                                            // level color
             name,                                             // level name
-            "\033[0m",                                        // color end
-            msg                                               // message
+            "\033[0m",                                        // reset
+            color,                                            // message color (same as level)
+            msg,                                              // message
+            "\033[0m"                                         // reset
         );
 
         auto it = LOG_LEVEL.find(level);
@@ -64,6 +79,9 @@ private:
     std::map<std::string, spdlog::level::level_enum> LOG_LEVEL;
     std::map<std::string, std::string> LOG_LEVEL_NAME;
     std::map<std::string, std::string> LOG_LEVEL_COLOR;
+    std::string timestamp_color_;
+    std::string func_color_;
+    std::string message_color_;
 
     Logs();
     Logs(const Logs&) = delete;

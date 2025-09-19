@@ -50,27 +50,31 @@ Logs::Logs() {
     };
 
     LOG_LEVEL_COLOR = {
-        {"ERROR",     "\033[1;31m"},   // bright red
-        {"WARNING",   "\033[1;35m"},   // magenta
-        {"INFO",      "\033[1;32m"},   // green
-        {"HTTP",      "\033[1;34m"},   // blue
-        {"VERBOSE",   "\033[1;90m"},   // gray
-        {"DEBUG",     "\033[1;37m"},   // white
-        {"CRITICAL",  "\033[1;33m"},   // yellow
-        {"ALERT",     "\033[1;33m"},   // yellow
-        {"DATABASE",  "\033[1;36m"},   // cyan
-        {"WEBSOCKET", "\033[1;95m"},    // magenta bright
-        {"THREAD",    "\033[1;96m"}    // cyan bright
+        {"ERROR",     "\033[38;5;196m"},   // bright red
+        {"WARNING",   "\033[38;5;214m"},   // orange
+        {"INFO",      "\033[38;5;40m"},    // bright green
+        {"HTTP",      "\033[38;5;27m"},    // blue
+        {"VERBOSE",   "\033[38;5;244m"},   // gray
+        {"DEBUG",     "\033[38;5;15m"},    // white
+        {"CRITICAL",  "\033[38;5;226m"},   // yellow
+        {"ALERT",     "\033[38;5;226m"},   // yellow
+        {"DATABASE",  "\033[38;5;51m"},    // cyan
+        {"WEBSOCKET", "\033[38;5;201m"},   // magenta
+        {"THREAD",    "\033[38;5;45m"}     // bright cyan
     };
 
+    timestamp_color_ = "\033[38;5;250m"; // light gray
+    func_color_ = "\033[38;5;39m";       // bright blue
+    message_color_ = "\033[38;5;15m";    // white
+
     auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    consoleSink->set_pattern("%Y-%m-%d %H:%M:%S %v");
+    consoleSink->set_pattern("%v");
 
     auto rawDailySink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
         logDir + "/app.log", 0, 0, true, 14
     );
     auto dailySink = std::make_shared<color_stripping_sink<spdlog::sinks::daily_file_sink_mt>>(rawDailySink);
-    dailySink->set_pattern("%Y-%m-%d %H:%M:%S %v");
+    dailySink->set_pattern("%v");
 
     auto distSink = std::make_shared<spdlog::sinks::dist_sink_mt>();
     distSink->add_sink(consoleSink);

@@ -1,13 +1,23 @@
 #include "Logs.h"
-#include "ColorStrippingSink.h"
-#include <spdlog/sinks/daily_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/dist_sink.h>
-#include <spdlog/details/log_msg.h>
-#include <spdlog/pattern_formatter.h>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/core/null_deleter.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <filesystem>
 #include <csignal>
 #include <exception>
+#include <regex>
+#include <iostream>
+
+std::string strip_ansi(const std::string& str) {
+    std::regex ansi_regex("\033\\[[0-9;]*m");
+    return std::regex_replace(str, ansi_regex, "");
+}
 
 Logs& Logs::Instance() {
     static Logs instance;
@@ -22,17 +32,17 @@ Logs::Logs() {
     }
 
     LOG_LEVEL = {
-        {"error", spdlog::level::err},
-        {"warn", spdlog::level::warn},
-        {"info", spdlog::level::info},
-        {"http", spdlog::level::info},
-        {"verbose", spdlog::level::debug},
-        {"debug", spdlog::level::debug},
-        {"critical", spdlog::level::critical},
-        {"alert", spdlog::level::critical},
-        {"database", spdlog::level::info},
-        {"websocket", spdlog::level::info},
-        {"thread", spdlog::level::info}
+        {"error", boost::log::trivial::error},
+        {"warn", boost::log::trivial::warning},
+        {"info", boost::log::trivial::info},
+        {"http", boost::log::trivial::info},
+        {"verbose", boost::log::trivial::trace},
+        {"debug", boost::log::trivial::debug},
+        {"critical", boost::log::trivial::fatal},
+        {"alert", boost::log::trivial::fatal},
+        {"database", boost::log::trivial::info},
+        {"websocket", boost::log::trivial::info},
+        {"thread", boost::log::trivial::info}
     };
 
     LOG_LEVEL_NAME = {
@@ -67,24 +77,31 @@ Logs::Logs() {
     func_color_ = "\033[38;5;39m";       // bright blue
     message_color_ = "\033[38;5;15m";    // white
 
-    auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    consoleSink->set_pattern("%v");
+    boost::log::add_common_attributes();
+    boost::log::core::get()->remove_all_sinks();
 
-    auto rawDailySink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
-        logDir + "/app.log", 0, 0, true, 14
+    // Console sink
+    auto console_backend = boost::make_shared<boost::log::sinks::text_ostream_backend>();
+    console_backend->add_stream(boost::shared_ptr<std::ostream>(&std::cout, [](std::ostream*){}));
+    console_backend->auto_flush(true);
+    auto console_sink = boost::make_shared<boost::log::sinks::synchronous_sink<boost::log::sinks::text_ostream_backend>>(console_backend);
+    console_sink->set_formatter([](boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
+        strm << rec[boost::log::expressions::smessage];
+    });
+    boost::log::core::get()->add_sink(console_sink);
+
+    // File sink
+    auto file_backend = boost::make_shared<boost::log::sinks::text_file_backend>(
+        boost::log::keywords::file_name = logDir + "/app.log",
+        boost::log::keywords::rotation_size = 0,
+        boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_interval(boost::posix_time::hours(24)),
+        boost::log::keywords::max_files = 14
     );
-    auto dailySink = std::make_shared<color_stripping_sink<spdlog::sinks::daily_file_sink_mt>>(rawDailySink);
-    dailySink->set_pattern("%v");
-
-    auto distSink = std::make_shared<spdlog::sinks::dist_sink_mt>();
-    distSink->add_sink(consoleSink);
-    distSink->add_sink(dailySink);
-
-    logger = std::make_shared<spdlog::logger>("multi_sink", distSink);
-    logger->flush_on(spdlog::level::info);
-    spdlog::flush_every(std::chrono::seconds(1));
-    spdlog::register_logger(logger);
-    logger->set_level(spdlog::level::debug);
+    auto file_sink = boost::make_shared<boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend>>(file_backend);
+    file_sink->set_formatter([](boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
+        strm << strip_ansi(rec[boost::log::expressions::smessage].get());
+    });
+    boost::log::core::get()->add_sink(file_sink);
 
     std::set_terminate([]() {
         try {
@@ -110,12 +127,5 @@ Logs::Logs() {
 }
 
 Logs::~Logs() {
-    if (logger) {
-        logger->flush();
-    }
-    spdlog::shutdown();
-}
-
-std::shared_ptr<spdlog::logger> Logs::getLogger() {
-    return logger;
+    boost::log::core::get()->flush();
 }

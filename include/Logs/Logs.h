@@ -1,5 +1,6 @@
 #pragma once
-#include <spdlog/spdlog.h>
+#include <boost/log/trivial.hpp>
+#include <boost/log/sources/record_ostream.hpp>
 #include <memory>
 #include <map>
 #include <string>
@@ -62,21 +63,18 @@ public:
             "\033[0m"                                         // reset
         );
 
+        auto sev = boost::log::trivial::info;
         auto it = LOG_LEVEL.find(level);
         if (it != LOG_LEVEL.end()) {
-            logger->log(it->second, formatted);
-        } else {
-            logger->info(formatted);
+            sev = it->second;
         }
+        BOOST_LOG_SEV(boost::log::trivial::logger::get(), sev) << formatted;
     }
-
-    std::shared_ptr<spdlog::logger> getLogger();
 
     ~Logs();
 
 private:
-    std::shared_ptr<spdlog::logger> logger;
-    std::map<std::string, spdlog::level::level_enum> LOG_LEVEL;
+    std::map<std::string, boost::log::trivial::severity_level> LOG_LEVEL;
     std::map<std::string, std::string> LOG_LEVEL_NAME;
     std::map<std::string, std::string> LOG_LEVEL_COLOR;
     std::string timestamp_color_;

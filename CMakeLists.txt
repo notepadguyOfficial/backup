@@ -8,11 +8,11 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-# Find spdlog
-find_package(spdlog REQUIRED)
+# Find Boost with log component
+find_package(Boost REQUIRED COMPONENTS log)
 
-# Find Boost
-find_package(Boost REQUIRED)
+# Find fmt
+find_package(fmt REQUIRED)
 
 # Automatically collect source files (with CONFIGURE_DEPENDS for auto-detection of new files)
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/src/*/*.cpp)
@@ -29,7 +29,8 @@ target_include_directories(app PRIVATE ${INCLUDE_DIRS})
 
 # Link the libraries
 target_link_libraries(app PRIVATE
-    spdlog::spdlog
+    Boost::log
+    fmt::fmt
     pthread
 )
 
